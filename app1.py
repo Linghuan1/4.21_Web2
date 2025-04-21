@@ -288,12 +288,12 @@ numeric_input_states = {} # 用于存储状态 ('输入数值' 或 '无')
 # 定义默认数值（仅在选择 '输入数值' 时使用）
 default_numeric_values = {
     '总价(万)': 120.0,
-    '面积(㎡)': 95.0,
-    '建造时间': 2015,
-    '楼层数': 18,
+    '面积(㎡)': 100.0,
+    '建造时间': 2018,
+    '楼层数': 30,
     '室': 3,
     '厅': 2,
-    '卫': 1
+    '卫': 2
 }
 
 # 定义数值输入参数
@@ -512,7 +512,7 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
     def display_result(title, title_color, result_text, result_color):
         st.markdown(f"<h5 style='color: {title_color}; margin-bottom: 5px; text-align: center;'>{title}</h5>", unsafe_allow_html=True)
         # ***** 修改：增大字体大小到 36px *****
-        st.markdown(f"<p style='font-size: 36px; font-weight: bold; color: {result_color}; margin-bottom: 10px; text-align: center;'>{result_text}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-size: 50px; font-weight: bold; color: {result_color}; margin-bottom: 10px; text-align: center;'>{result_text}</p>", unsafe_allow_html=True)
 
 
     with col1: # 市场细分
@@ -546,10 +546,10 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
              display_color = error_color
         elif price_level_pred_code == 1: # 高于平均水平
             display_text = price_level_pred_label
-            display_color = "#E74C3C" # 红色表示更高
+            display_color = "#ff7f0e" # 红色表示更高
         elif price_level_pred_code == 0: # 不高于平均水平
             display_text = price_level_pred_label
-            display_color = "#2ECC71" # 绿色表示不高于
+            display_color = "#ff7f0e" # 绿色表示不高于
         else: # 当前逻辑不应发生，但包含备用方案
             display_text = "未知状态"
             display_color = insufficient_data_color
