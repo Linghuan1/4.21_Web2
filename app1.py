@@ -354,7 +354,7 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
     all_inputs = {**selectbox_inputs}
     # 添加数值输入，尊重来自选择器的 'None' 状态
     for key, state in numeric_input_states.items():
-        if state == "无 (不适用)":
+        if state == "无":
             all_inputs[key] = None # 如果选择了 '无' 则存储 None
         else:
             # 从相应的 number_input 小部件检索值
