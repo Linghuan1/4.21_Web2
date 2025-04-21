@@ -510,8 +510,8 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
 
     # 用于创建一致结果显示块的辅助函数
     def display_result(title, title_color, result_text, result_color):
-        st.markdown(f"<h3 style='color: {title_color}; margin-bottom: 5px; text-align: center;'>{title}</h3>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-size: 28px; font-weight: bold; color: {result_color}; margin-bottom: 10px; text-align: center;'>{result_text}</p>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='color: {title_color}; margin-bottom: 5px; text-align: center;'>{title}</h2>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-size: 26px; font-weight: bold; color: {result_color}; margin-bottom: 10px; text-align: center;'>{result_text}</p>", unsafe_allow_html=True)
 
 
     with col1: # 市场细分
