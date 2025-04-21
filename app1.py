@@ -14,8 +14,6 @@ st.set_page_config(
 )
 
 # --- 常量定义：模型和资源文件路径 ---
-# Assume files are in the same directory as the script
-# --- 常量定义：模型和资源文件路径 ---
 # Get the directory where the script is located
 try:
     # This works when running as a script
@@ -95,7 +93,7 @@ def format_mapping_options_for_selectbox(name_to_code_mapping):
             sorted_items = sorted(name_to_code_mapping.items(), key=lambda item: int(item[1]))
         except ValueError:
              # Fallback to sorting by string code if int conversion fails
-            #  print(f"[格式化警告] 无法将所有 code 转换为 int 进行排序，将按字符串排序: {name_to_code_mapping}")
+             # print(f"[格式化警告] 无法将所有 code 转换为 int 进行排序，将按字符串排序: {name_to_code_mapping}")
              sorted_items = sorted(name_to_code_mapping.items(), key=lambda item: str(item[1]))
 
         for name, code in sorted_items:
@@ -201,6 +199,7 @@ feature_to_label = {
     '楼层': "楼层位置:",
     '所属区域': "所属区域:",
     '房龄': "房龄:",
+    # 数值型特征标签保持不变
     '总价(万)': "总价 (万):",
     '面积(㎡)': "面积 (㎡):",
     '建造时间': "建造时间 (年份):",
@@ -223,13 +222,14 @@ def create_selectbox(label, mapping_key, help_text, key_suffix):
              st.sidebar.warning(f"'{label}' 缺少有效选项 (除了'无')。请检查 {os.path.basename(MAPPINGS_PATH)} 中的 '{mapping_key}'。")
              if not display_map:
                  display_map = {None: "无 (加载失败)"} # Provide a fallback
+             all_select_valid = False # Mark as invalid if only 'None' is available
 
         options_codes = list(display_map.keys()) # Keys include None and the actual codes
 
         # Determine default index - try to avoid 'None' as default
         default_index = 0 # Default to '无' if no other options or logic applies
         if len(options_codes) > 1:
-            common_defaults = {'楼层': 1, '房龄': 2}
+            common_defaults = {'楼层': 1, '房龄': 2} # Example defaults (use integer codes)
             target_default_code = common_defaults.get(mapping_key)
 
             if target_default_code is not None and target_default_code in options_codes:
@@ -237,11 +237,13 @@ def create_selectbox(label, mapping_key, help_text, key_suffix):
                     default_index = options_codes.index(target_default_code)
                 except ValueError:
                     print(f"Warning: Default code {target_default_code} for {mapping_key} not found in options {options_codes}. Defaulting.")
-                    default_index = 1 # Default to the first non-'None' option
+                    # Fallback to the first non-'None' option if the preferred default isn't found
+                    if len(options_codes) > 1: default_index = 1
             elif len(options_codes) > 2:
+                 # Default to somewhere in the middle if no specific default
                  default_index = len(options_codes) // 2
             elif len(options_codes) == 2:
-                default_index = 1
+                default_index = 1 # Default to the only available option other than 'None'
 
         selected_value = st.sidebar.selectbox(
             label,
@@ -249,7 +251,7 @@ def create_selectbox(label, mapping_key, help_text, key_suffix):
             index=default_index,
             format_func=lambda x: display_map.get(x, f"未知 ({x})"),
             key=f"{key_suffix}_select",
-            help=help_text
+            help=help_text + " 选择 '无' 表示不提供此信息。" # Clarify '无' meaning
         )
         selectbox_labels_map[mapping_key] = label # Store mapping key to label
         return selected_value
@@ -260,21 +262,47 @@ def create_selectbox(label, mapping_key, help_text, key_suffix):
         return None
 
 
-selectbox_inputs['方位'] = create_selectbox(feature_to_label['方位'], '方位', "选择房屋的主要朝向。选择 '无' 如果不确定或不适用。", "orientation")
-selectbox_inputs['楼层'] = create_selectbox(feature_to_label['楼层'], '楼层', "选择房屋所在楼层的大致位置。选择 '无' 如果不确定或不适用。", "floor_level")
-selectbox_inputs['所属区域'] = create_selectbox(feature_to_label['所属区域'], '所属区域', "选择房产所在的行政区域或板块。选择 '无' 如果不确定或不适用。", "district")
-selectbox_inputs['房龄'] = create_selectbox(feature_to_label['房龄'], '房龄', "选择房屋的建造年限范围。选择 '无' 如果不确定或不适用。", "age")
+selectbox_inputs['方位'] = create_selectbox(feature_to_label['方位'], '方位', "选择房屋的主要朝向。", "orientation")
+selectbox_inputs['楼层'] = create_selectbox(feature_to_label['楼层'], '楼层', "选择房屋所在楼层的大致位置。", "floor_level")
+selectbox_inputs['所属区域'] = create_selectbox(feature_to_label['所属区域'], '所属区域', "选择房产所在的行政区域或板块。", "district")
+selectbox_inputs['房龄'] = create_selectbox(feature_to_label['房龄'], '房龄', "选择房屋的建造年限范围。", "age")
 
-# --- 数值输入控件 ---
+# --- 数值输入控件 (带 '是否提供' 选项) ---
 st.sidebar.subheader("数值项特征")
 numeric_inputs = {}
-numeric_inputs['总价(万)'] = st.sidebar.number_input(feature_to_label['总价(万)'], min_value=0.0, max_value=10000.0, value=120.0, step=5.0, format="%.1f", key="total_price", help="输入房产的总价，单位万元。")
-numeric_inputs['面积(㎡)'] = st.sidebar.number_input(feature_to_label['面积(㎡)'], min_value=1.0, max_value=2000.0, value=95.0, step=1.0, format="%.1f", key="area_sqm", help="输入房产的建筑面积，单位平方米。")
-numeric_inputs['建造时间'] = st.sidebar.number_input(feature_to_label['建造时间'], min_value=1900, max_value=2025, value=2015, step=1, format="%d", key="build_year", help="输入房屋的建造年份。")
-numeric_inputs['楼层数'] = st.sidebar.number_input(feature_to_label['楼层数'], min_value=1, max_value=100, value=18, step=1, format="%d", key="floor_num", help="输入楼栋的总楼层数。")
-numeric_inputs['室'] = st.sidebar.number_input(feature_to_label['室'], min_value=0, max_value=20, value=3, step=1, format="%d", key="rooms", help="输入卧室数量。")
-numeric_inputs['厅'] = st.sidebar.number_input(feature_to_label['厅'], min_value=0, max_value=10, value=2, step=1, format="%d", key="halls", help="输入客厅/餐厅数量。")
-numeric_inputs['卫'] = st.sidebar.number_input(feature_to_label['卫'], min_value=0, max_value=10, value=1, step=1, format="%d", key="baths", help="输入卫生间数量。")
+provide_flags = {} # To store checkbox states
+
+def create_numeric_input_with_none(internal_key, label, min_val, max_val, default_val, step_val, format_str, help_txt):
+    """Creates a checkbox and a conditional number input."""
+    provide_key = f"provide_{internal_key}"
+    checkbox_label = f"提供 {label.replace(':', '')}?"
+    provide_flags[internal_key] = st.sidebar.checkbox(checkbox_label, value=True, key=provide_key, help=f"勾选表示提供此项数值，取消勾选表示不提供或未知（相当于选择'无'）。")
+
+    if provide_flags[internal_key]:
+        numeric_inputs[internal_key] = st.sidebar.number_input(
+            label,
+            min_value=min_val,
+            max_value=max_val,
+            value=default_val,
+            step=step_val,
+            format=format_str,
+            key=f"{internal_key}_num",
+            help=help_txt
+        )
+    else:
+        # Display a placeholder or disable the input visually (optional)
+        # st.sidebar.text_input(label, value="无 (不提供)", disabled=True, key=f"{internal_key}_num_disabled")
+        numeric_inputs[internal_key] = None # Store None if checkbox is unchecked
+
+
+create_numeric_input_with_none('总价(万)', feature_to_label['总价(万)'], 0.0, 10000.0, 120.0, 5.0, "%.1f", "输入房产的总价，单位万元。")
+create_numeric_input_with_none('面积(㎡)', feature_to_label['面积(㎡)'], 1.0, 2000.0, 95.0, 1.0, "%.1f", "输入房产的建筑面积，单位平方米。")
+create_numeric_input_with_none('建造时间', feature_to_label['建造时间'], 1900, 2025, 2015, 1, "%d", "输入房屋的建造年份。")
+create_numeric_input_with_none('楼层数', feature_to_label['楼层数'], 1, 100, 18, 1, "%d", "输入楼栋的总楼层数。")
+create_numeric_input_with_none('室', feature_to_label['室'], 0, 20, 3, 1, "%d", "输入卧室数量。")
+create_numeric_input_with_none('厅', feature_to_label['厅'], 0, 10, 2, 1, "%d", "输入客厅/餐厅数量。")
+create_numeric_input_with_none('卫', feature_to_label['卫'], 0, 10, 1, 1, "%d", "输入卫生间数量。")
+
 
 # --- 预测触发按钮 ---
 st.sidebar.markdown("---")
@@ -283,14 +311,15 @@ predict_button_help = "点击这里根据输入的特征进行预测分析" if a
 
 if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_width=True, help=predict_button_help, disabled=predict_button_disabled):
 
+    # Combine selectbox inputs and numeric inputs (which might be None)
     all_inputs = {**selectbox_inputs, **numeric_inputs}
     print("Combined inputs for prediction:", all_inputs) # Debugging output
 
     # --- Initialize result variables ---
     market_pred_label = "等待计算..."
     price_level_pred_label = "等待计算..."
-    price_level_pred_code = -99
-    unit_price_pred = -1.0
+    price_level_pred_code = -99 # Use a distinct code for 'not computed' or 'error'
+    unit_price_pred = -1.0 # Use a distinct code for 'not computed' or 'error'
     error_messages = []
     insufficient_data_flags = {'market': False, 'price_level': False, 'regression': False}
 
@@ -299,21 +328,20 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
         """Checks if all required features for a model are present (not None)."""
         missing_for_model = []
         for feat in required_feature_list:
-            # Check if the feature is expected from a selectbox OR numeric input
-            is_selectbox_feature = feat in selectbox_inputs
-            is_numeric_feature = feat in numeric_inputs
-
-            if is_selectbox_feature and all_inputs.get(feat) is None:
-                # Use the label from feature_to_label mapping
-                missing_for_model.append(feature_to_label.get(feat, feat))
-            # No check for numeric inputs being None needed, as number_input prevents it
-            elif not is_selectbox_feature and not is_numeric_feature:
-                 # This case means a required feature isn't in the UI inputs
+            # Check if the feature is in all_inputs and its value is None
+            if feat not in all_inputs:
+                 # This case means a required feature isn't in the UI inputs at all
                  print(f"严重警告: 模型 '{model_key}' 需要的特征 '{feat}' 在UI输入中未定义!")
                  missing_for_model.append(f"{feat} (UI未定义)")
+            elif all_inputs.get(feat) is None:
+                # Use the label from feature_to_label mapping if available
+                missing_label = feature_to_label.get(feat, feat)
+                # Remove colon if present in the label for cleaner output
+                missing_label = missing_label.replace(':', '')
+                missing_for_model.append(missing_label)
 
         if missing_for_model:
-            print(f"模型 '{model_key}' 数据不足，缺少: {missing_for_model}")
+            print(f"模型 '{model_key}' 数据不足，缺少: {', '.join(missing_for_model)}")
             insufficient_data_flags[model_key] = True
             return False
         return True
@@ -330,6 +358,7 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
             input_df_market = pd.DataFrame([input_data_market])[market_features_needed] # Ensure order
             market_pred_code = market_model.predict(input_df_market)[0]
             market_output_map_raw = mappings.get('市场类别', {})
+            # Convert prediction code to int if possible, else keep as string for lookup
             market_pred_key = int(market_pred_code) if isinstance(market_pred_code, (int, np.integer)) else str(market_pred_code)
             market_pred_label = market_output_map_raw.get(market_pred_key, f"未知编码 ({market_pred_key})")
         except Exception as e:
@@ -337,6 +366,9 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
             print(msg)
             error_messages.append(msg)
             market_pred_label = "预测失败" # Indicate runtime error
+    else: # Insufficient data
+         market_pred_label = "数据不足"
+
 
     # --- 2. 价格水平预测 ---
     price_level_features_needed = feature_names_loaded.get('price_level', [])
@@ -351,12 +383,14 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
             price_level_pred_code_raw = price_level_model.predict(input_df_price_level)[0]
             price_level_output_map_raw = mappings.get('是否高于区域均价', {})
 
+            # Convert prediction code to int if possible, else keep as string for lookup
             if isinstance(price_level_pred_code_raw, (int, np.integer)):
                  price_level_pred_key = int(price_level_pred_code_raw)
-                 price_level_pred_code = price_level_pred_key
+                 price_level_pred_code = price_level_pred_key # Store the valid integer code
             else:
                  price_level_pred_key = str(price_level_pred_code_raw)
-                 price_level_pred_code = -99
+                 # Keep price_level_pred_code as -99 if raw prediction isn't integer
+                 # This assumes the model should output 0 or 1
 
             price_level_pred_label = price_level_output_map_raw.get(price_level_pred_key, f"未知编码 ({price_level_pred_key})")
 
@@ -365,7 +399,11 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
             print(msg)
             error_messages.append(msg)
             price_level_pred_label = "预测失败"
-            price_level_pred_code = -99
+            price_level_pred_code = -99 # Ensure error code is set
+    else: # Insufficient data
+         price_level_pred_label = "数据不足"
+         price_level_pred_code = -99 # Ensure error code is set
+
 
     # --- 3. 均价预测 (回归) ---
     # ***** 使用代码中定义的 REQUIRED_REGRESSION_FEATURES *****
@@ -408,6 +446,9 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
             print(msg)
             error_messages.append(msg)
             unit_price_pred = -1.0 # Mark as error
+    else: # Insufficient data
+         unit_price_pred = -1.0 # Also mark as error/not computed if data is insufficient
+
 
     # --- 结果显示区域 ---
     st.markdown("---")
@@ -425,12 +466,13 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
     col1, col2, col3 = st.columns(3)
 
     with col1: # Market Segment
-        st.markdown(f"<h5 style='color: {market_color}; margin-bottom: 5px;'>市场细分</h5>", unsafe_allow_html=True)
+        # Adjusted margin for title
+        st.markdown(f"<h5 style='color: {market_color}; margin-bottom: 0px;'>市场细分</h5>", unsafe_allow_html=True)
         if market_pred_label == "配置缺失":
              display_text = "特征配置缺失"
              display_color = config_missing_color
-        elif insufficient_data_flags['market']:
-            display_text = "数据不足，无法判断"
+        elif insufficient_data_flags['market'] or market_pred_label == "数据不足":
+            display_text = "数据不足" # Consolidate label
             display_color = insufficient_data_color
         elif market_pred_label == "预测失败":
             display_text = "预测失败"
@@ -438,15 +480,17 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
         else:
             display_text = market_pred_label
             display_color = market_color # Use title color for result
-        st.markdown(f"<p style='font-size: 28px; font-weight: bold; color: {display_color}; margin-bottom: 10px;'>{display_text}</p>", unsafe_allow_html=True)
+        # Adjusted margin for result paragraph
+        st.markdown(f"<p style='font-size: 28px; font-weight: bold; color: {display_color}; margin-top: 0px; margin-bottom: 10px;'>{display_text}</p>", unsafe_allow_html=True)
 
     with col2: # Price Level
-        st.markdown(f"<h5 style='color: {price_level_base_color}; margin-bottom: 5px;'>价格水平 (相对区域)</h5>", unsafe_allow_html=True)
+        # Adjusted margin for title
+        st.markdown(f"<h5 style='color: {price_level_base_color}; margin-bottom: 0px;'>价格水平 (相对区域)</h5>", unsafe_allow_html=True)
         if price_level_pred_label == "配置缺失":
             display_text = "特征配置缺失"
             display_color = config_missing_color
-        elif insufficient_data_flags['price_level']:
-            display_text = "数据不足，无法判断"
+        elif insufficient_data_flags['price_level'] or price_level_pred_label == "数据不足":
+            display_text = "数据不足" # Consolidate label
             display_color = insufficient_data_color
         elif price_level_pred_label == "预测失败" or price_level_pred_code == -99 :
              display_text = "预测失败"
@@ -458,31 +502,35 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
             display_text = price_level_pred_label
             display_color = "#2ECC71" # Green for not higher
         else:
-            display_text = "未知状态" # Fallback
-            display_color = insufficient_data_color
-        st.markdown(f"<p style='font-size: 28px; font-weight: bold; color: {display_color}; margin-bottom: 10px;'>{display_text}</p>", unsafe_allow_html=True)
+            # This case might catch '未知编码' or other unexpected labels if the code isn't 0 or 1
+            display_text = price_level_pred_label # Show the label we got
+            display_color = insufficient_data_color # Default to grey
+        # Adjusted margin for result paragraph
+        st.markdown(f"<p style='font-size: 28px; font-weight: bold; color: {display_color}; margin-top: 0px; margin-bottom: 10px;'>{display_text}</p>", unsafe_allow_html=True)
 
     with col3: # Unit Price Prediction
-        st.markdown(f"<h5 style='color: {unit_price_color}; margin-bottom: 5px;'>均价预测</h5>", unsafe_allow_html=True)
-        label_text = "预测单价 (元/㎡)" # Default label
+        # Adjusted margin for title
+        st.markdown(f"<h5 style='color: {unit_price_color}; margin-bottom: 0px;'>均价预测</h5>", unsafe_allow_html=True)
         value_html = "" # Initialize value html
 
         if insufficient_data_flags['regression']:
-            display_text = "数据不足，无法判断"
+            display_text = "数据不足" # Consolidate label
             display_color = insufficient_data_color
-            value_html = f"<p style='font-size: 28px; font-weight: bold; color: {display_color}; margin-bottom: 10px;'>{display_text}</p>"
-        elif unit_price_pred == -1.0:
-            display_text = "预测失败"
+            value_html = f"<p style='font-size: 28px; font-weight: bold; color: {display_color}; margin-top: 0px; margin-bottom: 10px;'>{display_text}</p>"
+        elif unit_price_pred == -1.0: # Check for the error/insufficient data flag
+            display_text = "预测失败" # Assume -1.0 means failure or insufficient data now
             display_color = error_color
-            value_html = f"<p style='font-size: 28px; font-weight: bold; color: {display_color}; margin-bottom: 10px;'>{display_text}</p>"
+            value_html = f"<p style='font-size: 28px; font-weight: bold; color: {display_color}; margin-top: 0px; margin-bottom: 10px;'>{display_text}</p>"
         else:
-            display_text = f"{unit_price_pred:,.0f}" # Formatted number
+            # Add unit directly to the formatted number
+            display_text = f"{unit_price_pred:,.0f} 元/㎡"
             display_color = unit_price_color # Use title color for result
-            # Mimic st.metric look with markdown
-            value_html = f"<p style='font-size: 28px; font-weight: bold; color: {display_color}; margin-bottom: 10px;'>{display_text}</p>"
+            # Adjusted margin for result paragraph
+            value_html = f"<p style='font-size: 28px; font-weight: bold; color: {display_color}; margin-top: 0px; margin-bottom: 10px;'>{display_text}</p>"
 
-        # Display label first
-        st.markdown(f"<p style='font-size: small; color: grey; margin-bottom: 0px;'>{label_text}</p>", unsafe_allow_html=True)
+        # --- REMOVED the separate label markdown ---
+        # st.markdown(f"<p style='font-size: small; color: grey; margin-bottom: 0px;'>{label_text}</p>", unsafe_allow_html=True)
+
         # Display the value/status using markdown
         st.markdown(value_html, unsafe_allow_html=True)
 
@@ -501,7 +549,7 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
         st.markdown("---")
         st.info("💡 **提示:** 模型预测结果是基于历史数据和输入特征的估计，仅供参考。实际交易价格受市场供需、具体房况、谈判等多种因素影响。")
     elif any(insufficient_data_flags.values()):
-        st.warning("⚠️ 部分预测因输入数据不足或配置缺失未能完成。请在侧边栏提供所有必需的特征信息（避免选择 '无'）。")
+        st.warning("⚠️ 部分预测因输入数据不足或配置缺失未能完成。请在侧边栏提供所有必需的特征信息（避免选择 '无' 或取消勾选数值项）。")
         st.markdown("---")
         st.info("💡 **提示:** 模型预测结果是基于历史数据和输入特征的估计，仅供参考。实际交易价格受市场供需、具体房况、谈判等多种因素影响。")
 
