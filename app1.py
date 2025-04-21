@@ -7,7 +7,7 @@ import os
 
 # --- 页面基础配置 ---
 st.set_page_config(
-    page_title="盐城二手房智能分析器",
+    page_title="盐城市二手房智能分析器",
     page_icon="🏠",
     layout="wide",
     initial_sidebar_state="auto"
@@ -128,7 +128,7 @@ def format_mapping_options_for_selectbox(name_to_code_mapping):
 # --- Streamlit 用户界面主要部分 ---
 st.title("🏠 盐城二手房智能分析与预测")
 st.markdown("""
-欢迎使用盐城二手房分析工具！请在左侧边栏输入房产特征，我们将为您提供三个维度的预测：
+欢迎使用盐城市二手房分析工具！请在左侧边栏输入房产特征，我们将为您提供三个维度的预测：
 1.  **市场细分预测**: 判断房产属于低端、中端还是高端市场。
 2.  **价格水平预测**: 判断房产单价是否高于其所在区域的平均水平。
 3.  **房产均价预测**: 预测房产的每平方米单价（元/㎡）。
