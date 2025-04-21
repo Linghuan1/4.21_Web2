@@ -317,7 +317,7 @@ for key, label in feature_to_label.items():
         # 用于选择输入值或指定 '无' 的选择器
         numeric_input_states[key] = st.sidebar.selectbox(
             label, # 使用 feature_to_label 中定义的标签
-            options=["输入数值", "无 (不适用)"],
+            options=["输入数值", "无"],
             index=0,  # 默认为 "输入数值"
             key=f"{key_suffix}_selector",
             help=param['help']
@@ -592,13 +592,13 @@ if st.sidebar.button("🚀 开始分析预测", type="primary", use_container_wi
         st.markdown("---")
         st.info("💡 **提示:** 模型预测结果是基于历史数据和输入特征的估计，仅供参考。实际交易价格受市场供需、具体房况、谈判等多种因素影响。")
     elif has_insufficient_data or market_pred_label == "配置缺失" or price_level_pred_label == "配置缺失":
-        st.warning("⚠️ 部分预测因输入数据不足或配置缺失未能完成。请在侧边栏提供所有必需的特征信息（避免选择 '无 (不适用)'）。")
+        st.warning("⚠️ 部分预测因输入数据不足或配置缺失未能完成。请在侧边栏提供所有必需的特征信息（避免选择'无'）")
         st.markdown("---")
         st.info("💡 **提示:** 模型预测结果是基于历史数据和输入特征的估计，仅供参考。实际交易价格受市场供需、具体房况、谈判等多种因素影响。")
     elif has_errors and not error_messages: # 处理预测失败但未抛出上述异常的情况
          st.error("❌ 部分预测失败。请检查输入或联系管理员。")
          st.markdown("---")
-         st.info("💡 **提示:** 模型预测结果是基于历史数据和输入特征的估计，仅供参考。实际交易价格受市场供需、具体房况、谈判等多种因素影响。")
+         st.info("💡 **提示:** 模型预测结果是基于历史数据和输入特征的估计，仅供参考。实际交易价格受市场供需、具体房况、谈判等多种因素影响")
     # 如果 error_messages 不为空，则上面的错误块已显示。
 
 
